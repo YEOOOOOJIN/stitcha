@@ -18,6 +18,15 @@ from core.stitch import stitch
 from core.compress import compress
 from core.ffmpeg_utils import FFmpegNotFoundError, check_ffmpeg_available
 
+
+def _clean_path(raw: str) -> str:
+    r"""Strip PowerShell drag-and-drop artifacts like: & 'd:\path with spaces\file.mp4'"""
+    s = raw.strip()
+    if s.startswith("& "):
+        s = s[2:]
+    s = s.strip().strip("'").strip('"')
+    return s.strip()
+
 APP_CSS = """
 Screen {
     background: $surface;
@@ -142,7 +151,7 @@ class StitchScreen(Screen):
         log = self.query_one("#log", RichLog)
         if event.button.id == "add-path":
             path_input = self.query_one("#path-input", Input)
-            value = path_input.value.strip().strip('"')
+            value = _clean_path(path_input.value)
             if value:
                 self._paths.append(value)
                 self.query_one("#file-list", ListView).append(
@@ -162,7 +171,7 @@ class StitchScreen(Screen):
         elif event.button.id == "back":
             self.app.pop_screen()
         elif event.button.id == "run-stitch":
-            output = self.query_one("#output-input", Input).value.strip().strip('"')
+            output = _clean_path(self.query_one("#output-input", Input).value)
             if len(self._paths) < 2:
                 log.write("[red]Need at least 2 clips.[/red]")
                 return
@@ -228,8 +237,8 @@ class CompressScreen(Screen):
         if event.button.id != "run-compress":
             return
 
-        input_path = self.query_one("#input-path", Input).value.strip().strip('"')
-        output_path = self.query_one("#output-path", Input).value.strip().strip('"')
+        input_path = _clean_path(self.query_one("#input-path", Input).value)
+        output_path = _clean_path(self.query_one("#output-path", Input).value)
         max_size_str = self.query_one("#max-size", Input).value.strip()
 
         if not input_path or not output_path or not max_size_str:
