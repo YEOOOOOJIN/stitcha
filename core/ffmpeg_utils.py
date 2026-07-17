@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import threading
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -110,7 +112,23 @@ def run_ffmpeg(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1
     )
 
-    stderr_lines: list[str] = []
+    # ffmpeg writes progress info to stdout and its (often verbose) normal log
+    # output to stderr. Both are OS pipes with a bounded buffer (small on
+    # Windows, ~64KB). If we only read stdout here, a long-running encode can
+    # fill the stderr buffer; ffmpeg then blocks writing to stderr while we
+    # block waiting on stdout, and neither side can proceed. Draining stderr
+    # concurrently on a background thread avoids that deadlock. The deque cap
+    # bounds memory on very long/chatty encodes; only the tail is ever used
+    # for error reporting anyway.
+    stderr_lines: deque[str] = deque(maxlen=200)
+
+    def _drain_stderr() -> None:
+        assert proc.stderr is not None
+        for line in proc.stderr:
+            stderr_lines.append(line)
+
+    stderr_thread = threading.Thread(target=_drain_stderr, daemon=True)
+    stderr_thread.start()
 
     assert proc.stdout is not None
     for line in proc.stdout:
@@ -125,11 +143,11 @@ def run_ffmpeg(
         elif on_progress and line.startswith("progress=") and line.endswith("end"):
             on_progress(1.0)
 
-    if proc.stderr is not None:
-        stderr_lines = proc.stderr.readlines()
     proc.wait()
+    stderr_thread.join()
 
     if proc.returncode != 0:
         raise RuntimeError(
-            f"ffmpeg exited with code {proc.returncode}:\n" + "".join(stderr_lines[-40:])
+            f"ffmpeg exited with code {proc.returncode}:\n"
+            + "".join(list(stderr_lines)[-40:])
         )
