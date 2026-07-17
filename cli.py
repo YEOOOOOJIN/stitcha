@@ -1,8 +1,8 @@
 """
 Flag-driven CLI mode:
 
-    videotool stitch -o out.mp4 clip1.mp4 clip2.mp4 clip3.mp4
-    videotool compress -i input.mov -o output.mp4 --max-size 25
+    stitcha stitch -o out.mp4 clip1.mp4 clip2.mp4 clip3.mp4
+    stitcha compress -i input.mov -o output.mp4 --max-size 25
 """
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="videotool", description="Stitch and compress video files.")
+    parser = argparse.ArgumentParser(prog="stitcha", description="Stitch and compress video files.")
     sub = parser.add_subparsers(dest="command")
 
     p_stitch = sub.add_parser("stitch", help="Concatenate videos in the order given.")

@@ -1,4 +1,4 @@
-# video-toolkit
+# stitcha
 
 Two workflows, wrapped around FFmpeg:
 

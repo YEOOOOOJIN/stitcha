@@ -93,7 +93,7 @@ class MainMenu(Screen):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Vertical(id="menu-panel"):
-            yield Static("video-toolkit", id="menu-title")
+            yield Static("stitcha", id="menu-title")
             with Vertical(id="menu-buttons"):
                 yield Button("Stitch videos together", id="goto-stitch", variant="primary")
                 yield Button("Compress a video", id="goto-compress", variant="primary")
@@ -276,7 +276,7 @@ class CompressScreen(Screen):
 
 class VideoToolkitApp(App):
     CSS = APP_CSS
-    TITLE = "video-toolkit"
+    TITLE = "stitcha"
 
     def on_mount(self) -> None:
         try:
